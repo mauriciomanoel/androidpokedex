@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,7 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -35,7 +39,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -43,7 +49,10 @@ import io.mauricio.pokedex.R
 import io.mauricio.pokedex.ui.theme.PokedexTheme
 
 @Composable
-fun PokemonListScreen(navController: NavController) {
+fun PokemonListScreen(
+    navController: NavController,
+    viewModel: PokemonListViewModel = hiltViewModel()
+) {
     Surface(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize()
@@ -57,15 +66,11 @@ fun PokemonListScreen(navController: NavController) {
                 .fillMaxWidth()
                 .align(CenterHorizontally)
             )
-            SearchBar(modifier = Modifier.fillMaxWidth().padding(16.dp), "Search...", {
-                Log.d("MMCJ", "string= $it")
-            })
-
-            Spacer(Modifier.height(10.dp))
-
+            SearchBar(modifier = Modifier.fillMaxWidth().padding(10.dp), "Search...") {
+                viewModel.seachPokemonList(it)
+            }
             PokemonList(navController)
         }
-
     }
 }
 
@@ -75,8 +80,8 @@ fun SearchBar(
     hint: String = "",
     onSearch: (String) -> Unit = {}
 ) {
-    var text by remember { mutableStateOf("") }
-    var isHintDisplayed by remember { mutableStateOf(hint != "") }
+    var text by rememberSaveable { mutableStateOf("") }
+    var isHintDisplayed by rememberSaveable { mutableStateOf(hint != "") }
 
     Box(modifier = modifier) {
         BasicTextField(
@@ -97,6 +102,11 @@ fun SearchBar(
                     isHintDisplayed = !it.isFocused
                 }
         )
+
+        if (!text.isNullOrEmpty()) {
+            isHintDisplayed = false
+        }
+
         if(isHintDisplayed) {
             Text(
                 text = hint,
@@ -108,7 +118,6 @@ fun SearchBar(
     }
 }
 
-
 @Composable
 fun PokemonList (
     navController: NavController,
@@ -119,9 +128,10 @@ fun PokemonList (
     val endReached by remember { viewModel.endReached }
     val loadError by remember { viewModel.loadError }
     val isLoading by remember { viewModel.isLoading }
+    val isSearching by remember { viewModel.isSearching }
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(10.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         val itemCount = if (pokemonList.size % 2 == 0) {
@@ -130,11 +140,48 @@ fun PokemonList (
             pokemonList.size / 2 + 1
         }
         items(itemCount) {
-            if (it >= itemCount - 1 && !endReached) {
+            if (it >= itemCount - 1 && !endReached && !isLoading && !isSearching) {
                 viewModel.loadPokemonPaginaed()
             }
             PokemonRow(rowIndex = it, entries = pokemonList, navController = navController)
         }
     }
 
+    Box(contentAlignment = Center,
+        modifier = Modifier.fillMaxSize()
+    ) {
+
+        if (isLoading) {
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        }
+
+        if (loadError.isNotEmpty()) {
+            RetrySection(error = loadError) {
+                viewModel.loadPokemonPaginaed()
+            }
+        }
+
+    }
+
 }
+
+@Composable
+fun RetrySection(
+    error: String,
+    onRetry: () -> Unit = {}
+) {
+    Column {
+        Text(error, color= Color.Red, fontSize = 18.sp)
+
+        Spacer(Modifier.height(10.dp))
+        
+        Button(
+            onClick = { onRetry() },
+            modifier = Modifier.align(CenterHorizontally)
+        ) {
+            Text(text = "Retry")
+        }
+    }
+}
+
+

@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dagger.hilt.android.AndroidEntryPoint
+import io.mauricio.pokedex.pokemondetail.PokemonDetailScreen
 import io.mauricio.pokedex.pokemonlist.PokemonListScreen
 import io.mauricio.pokedex.repository.PokemonRepository
 import io.mauricio.pokedex.ui.theme.PokedexTheme
@@ -55,6 +56,8 @@ class MainActivity : ComponentActivity() {
                         val pokemonName = remember {
                             it.arguments?.getString("pokemonName")
                         }
+
+                        PokemonDetailScreen(dominantColor= dominantColor, pokemonName= pokemonName ?: "", navController= navController)
                     }
                 }
 

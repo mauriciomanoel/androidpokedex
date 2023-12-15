@@ -33,13 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import com.google.accompanist.coil.CoilImage
 import io.mauricio.pokedex.data.models.PokemonListEntry
-import io.mauricio.pokedex.ui.theme.PokedexTheme
 import io.mauricio.pokedex.ui.theme.RobotoCondensed
 
 @Composable
